@@ -1,14 +1,20 @@
 # Simple FTP Server
+
 ## 环境配置
+
 * 开发环境：Ubuntu 14.04.1
 * 测试环境：Ruby 2.2.3
+
 ## 程序功能
+
 * 启动方法：按照以下命令参数启动FTP Server
-> Usage: 001-ftp-server/myftp.rb [options]
->   -p, --port=PORT                    listen port
->       --host=HOST                    binding address
->       --dir=DIR                      change current directory
->   -h                                 print help
+```
+Usage: 001-ftp-server/myftp.rb [options]
+  -p, --port=PORT                    listen port
+      --host=HOST                    binding address
+      --dir=DIR                      change current directory
+  -h                                 print help
+```
 * 实现命令：
   * USER/PASS
   * TYPE
@@ -20,13 +26,16 @@
   * STOR
 * 日志记录：001-ftp-server/logfile.log
 * 多线程/进程支持
+
 ## 程序实现
+
 * 初始化部分：
   * $options：存server相关变量
   * option_parser: 解析cmd命令
   * $user_pass：存用户名及密码
   * $response：存回应客户端消息
   * $log：日志输出
+
 * 命令执行部分：
   * pass_command：
     * 参数：user_name（用户名），command（命令），client（客户端）
@@ -68,6 +77,7 @@
     * 参数：command（命令），client（客户端）
     * 返回：无
     * 实现：处理非法（未实现）命令
+    
 * 服务器启动：
   * 以命令参数新建服务器（默认：127.0.0.1:21 C:\）
   * 对于新连接客户端发送欢迎消息，等待USER命令
