@@ -8,6 +8,7 @@ $options = {}
 $options[:PORT] = 21
 $options[:HOST] = '127.0.0.1'
 $options[:DIR] = 'C:\\'
+$options[:CLIENT_DIR] = {}
 $options[:FILEPORT] = 20000
 
 option_parser = OptionParser.new do |opts|
@@ -62,7 +63,7 @@ $log.level = Logger::DEBUG
 
 #PASS
 def pass_command(user_name, command, client)
-  $log.info(command)
+  $log.info(client + ': ' + command)
 
   password = command.chomp[5..(command.length - 1)]
   if $user_pass[user_name] == password
@@ -76,7 +77,7 @@ end
 
 #USER
 def user_command(command, client)
-  $log.info(command)
+  $log.info(client + ': ' + command)
 
   user_name = command.chomp[5..(command.length - 1)]
   if $user_pass.has_key?(user_name)
@@ -98,19 +99,19 @@ end
 
 #LIST
 def list_command(command, client)
-  $log.info(command)
+  $log.info(client + ': ' + command)
 
   file_server = TCPServer.new($options[:HOST], $options[:FILEPORT])
   client.puts $response[150]
   file_client = file_server.accept
 
-  Dir.foreach($options[:DIR]) {
+  Dir.foreach($options[:CLIENT_DIR][client]) {
     |file_name|
-    file_info = (File.directory?($options[:DIR] + file_name) ? 'd' : '-')
-    3.times {file_info += ((File.readable?($options[:DIR] + file_name) ? 'r' : '-') + (File.writable?($options[:DIR] + file_name) ? 'w' : '-') + (File.executable?($options[:DIR] + file_name) ? 'x' : '-'))}
+    file_info = (File.directory?($options[:CLIENT_DIR][client] + file_name) ? 'd' : '-')
+    3.times {file_info += ((File.readable?($options[:CLIENT_DIR][client] + file_name) ? 'r' : '-') + (File.writable?($options[:CLIENT_DIR][client] + file_name) ? 'w' : '-') + (File.executable?($options[:CLIENT_DIR][client] + file_name) ? 'x' : '-'))}
     file_info += ' 1 0 0 '
-    file_info += (File::size($options[:DIR] + file_name).to_s + ' ')
-    file_info += (File::mtime($options[:DIR] + file_name).strftime('%b %d %H:%M ').to_s)
+    file_info += (File::size($options[:CLIENT_DIR][client] + file_name).to_s + ' ')
+    file_info += (File::mtime($options[:CLIENT_DIR][client] + file_name).strftime('%b %d %H:%M ').to_s)
     file_info += file_name
     file_client.puts file_info
   }
@@ -122,31 +123,31 @@ end
 
 #CWD
 def cwd_command(command, client)
-  $log.info(command)
+  $log.info(client + ': ' + command)
 
   directory = command.chomp[4..(command.length - 1)]
   if(directory == "..\\" || directory == "..")
-    if($options[:DIR].split("\\").length > 1)
-      array = $options[:DIR].split("\\")
+    if($options[:CLIENT_DIR][client].split("\\").length > 1)
+      array = $options[:CLIENT_DIR][client].split("\\")
       array.pop
-      $options[:DIR] = array.join("\\")
-      $options[:DIR] += "\\" unless $options[:DIR].end_with?("\\")
+      $options[:CLIENT_DIR][client] = array.join("\\")
+      $options[:CLIENT_DIR][client] += "\\" unless $options[:CLIENT_DIR][client].end_with?("\\")
       client.puts $response[250]
     else
       client.puts $response[550]
     end
   elsif (directory[1] == ":")
     if(File.exist?(directory) && File.directory?(directory))
-      $options[:DIR] = directory
-      $options[:DIR] += "\\" unless $options[:DIR].end_with?("\\")
+      $options[:CLIENT_DIR][client] = directory
+      $options[:CLIENT_DIR][client] += "\\" unless $options[:CLIENT_DIR][client].end_with?("\\")
       client.puts $response[250]
     else
       client.puts $response[550]
     end
   else
-    if(File.exist?($options[:DIR] + directory) && File.directory?($options[:DIR] + directory))
-      $options[:DIR] = $options[:DIR] + directory
-      $options[:DIR] += "\\" unless $options[:DIR].end_with?("\\")
+    if(File.exist?($options[:CLIENT_DIR][client] + directory) && File.directory?($options[:CLIENT_DIR][client] + directory))
+      $options[:CLIENT_DIR][client] = $options[:CLIENT_DIR][client] + directory
+      $options[:CLIENT_DIR][client] += "\\" unless $options[:CLIENT_DIR][client].end_with?("\\")
       client.puts $response[250]
     else
       client.puts $response[550]
@@ -156,23 +157,23 @@ end
 
 #PWD
 def pwd_command(command, client)
-  $log.info(command)
+  $log.info(client + ': ' + command)
 
-  $response[257] = "257 \"#{$options[:DIR]}\" created.\r\n"
+  $response[257] = "257 \"#{$options[:CLIENT_DIR][client]}\" created.\r\n"
   client.puts $response[257]
 end
 
 #RETR
 def retr_command(command, client)
-  $log.info(command)
+  $log.info(client + ': ' + command)
 
   file_name = command.chomp[5..(command.length - 1)]
-  if File.exist?($options[:DIR] + file_name)
+  if File.exist?($options[:CLIENT_DIR][client] + file_name)
     file_server = TCPServer.new($options[:HOST], $options[:FILEPORT])
     client.puts $response[150]
     file_client = file_server.accept
 
-    file = File.open($options[:DIR] + file_name, "rb")
+    file = File.open($options[:CLIENT_DIR][client] + file_name, "rb")
     file.each { |line| file_client.puts line }
     file.close
 
@@ -186,7 +187,7 @@ end
 
 #STOR
 def stor_command(command, client)
-  $log.info(command)
+  $log.info(client + ': ' + command)
 
   file_name = command.chomp[5..(command.length - 1)]
 
@@ -194,7 +195,7 @@ def stor_command(command, client)
   client.puts $response[150]
   file_client = file_server.accept
 
-  file = File.new($options[:DIR] + file_name, "wb")
+  file = File.new($options[:CLIENT_DIR][client] + file_name, "wb")
   loop do
     line = file_client.gets
     break if line == nil
@@ -209,7 +210,7 @@ end
 
 #PASV
 def pasv_command(command, client)
-  $log.info(command)
+  $log.info(client + ': ' + command)
 
   $options[:FILEPORT] = ($options[:FILEPORT] + 1 - 20000) % 40000 + 20000
   $response[227] = "227 Entering Passive Mode (#{$options[:HOST].gsub('.', ',')},#{$options[:FILEPORT]/256},#{$options[:FILEPORT]%256}).\r\n"
@@ -218,7 +219,7 @@ end
 
 #TYPE
 def type_command(command, client)
-  $log.info(command)
+  $log.info(client + ': ' + command)
   type = command.chomp[5..(command.length - 1)]
   if(type == "I")
     $response[200] = "200 Type set to #{type}.\r\n"
@@ -233,7 +234,7 @@ end
 
 #not found
 def command_not_found(command, client)
-  $log.debug(command)
+  $log.debug(client + ': ' + command)
 
   client.puts $response[500]
 end
@@ -242,6 +243,7 @@ end
 $server = TCPServer.new($options[:HOST], $options[:PORT])
 loop do
   Thread.start($server.accept) do |client|
+    $options[:CLIENT_DIR][client] = $options[:DIR]
     client.puts $response[220]
     loop do
       command = client.gets
