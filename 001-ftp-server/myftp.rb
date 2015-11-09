@@ -63,7 +63,7 @@ $log.level = Logger::DEBUG
 
 #PASS
 def pass_command(user_name, command, client)
-  $log.info(client + ': ' + command)
+  $log.info(client.to_s + ': ' + command)
 
   password = command.chomp[5..(command.length - 1)]
   if $user_pass[user_name] == password
@@ -77,8 +77,7 @@ end
 
 #USER
 def user_command(command, client)
-  $log.info(client + ': ' + command)
-
+  $log.info(client.to_s + ': ' + command)
   user_name = command.chomp[5..(command.length - 1)]
   if $user_pass.has_key?(user_name)
     client.puts $response[331]
@@ -99,7 +98,7 @@ end
 
 #LIST
 def list_command(command, client)
-  $log.info(client + ': ' + command)
+  $log.info(client.to_s + ': ' + command)
 
   file_server = TCPServer.new($options[:HOST], $options[:FILEPORT])
   client.puts $response[150]
@@ -123,7 +122,7 @@ end
 
 #CWD
 def cwd_command(command, client)
-  $log.info(client + ': ' + command)
+  $log.info(client.to_s + ': ' + command)
 
   directory = command.chomp[4..(command.length - 1)]
   if(directory == "..\\" || directory == "..")
@@ -157,7 +156,7 @@ end
 
 #PWD
 def pwd_command(command, client)
-  $log.info(client + ': ' + command)
+  $log.info(client.to_s + ': ' + command)
 
   $response[257] = "257 \"#{$options[:CLIENT_DIR][client]}\" created.\r\n"
   client.puts $response[257]
@@ -165,7 +164,7 @@ end
 
 #RETR
 def retr_command(command, client)
-  $log.info(client + ': ' + command)
+  $log.info(client.to_s + ': ' + command)
 
   file_name = command.chomp[5..(command.length - 1)]
   if File.exist?($options[:CLIENT_DIR][client] + file_name)
@@ -187,7 +186,7 @@ end
 
 #STOR
 def stor_command(command, client)
-  $log.info(client + ': ' + command)
+  $log.info(client.to_s + ': ' + command)
 
   file_name = command.chomp[5..(command.length - 1)]
 
@@ -210,7 +209,7 @@ end
 
 #PASV
 def pasv_command(command, client)
-  $log.info(client + ': ' + command)
+  $log.info(client.to_s + ': ' + command)
 
   $options[:FILEPORT] = ($options[:FILEPORT] + 1 - 20000) % 40000 + 20000
   $response[227] = "227 Entering Passive Mode (#{$options[:HOST].gsub('.', ',')},#{$options[:FILEPORT]/256},#{$options[:FILEPORT]%256}).\r\n"
@@ -219,7 +218,7 @@ end
 
 #TYPE
 def type_command(command, client)
-  $log.info(client + ': ' + command)
+  $log.info(client.to_s + ': ' + command)
   type = command.chomp[5..(command.length - 1)]
   if(type == "I")
     $response[200] = "200 Type set to #{type}.\r\n"
@@ -234,7 +233,7 @@ end
 
 #not found
 def command_not_found(command, client)
-  $log.debug(client + ': ' + command)
+  $log.debug(client.to_s + ': ' + command)
 
   client.puts $response[500]
 end
